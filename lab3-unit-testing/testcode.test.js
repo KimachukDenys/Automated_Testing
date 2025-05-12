@@ -3,6 +3,7 @@ import * as ult from './testcode.js';
 // Тест для функціх asinh
 
 // 1. Тест на коректність результату
+// Перевіряє, що функція `asinh` правильно обчислює значення гіперболічного арксинуса.
 describe('Asinh function - Correct', () => {
     test('asinh should return correct value', () => {
         const result = ult.asinh(5);
@@ -14,6 +15,7 @@ describe('Asinh function - Correct', () => {
 });
 
 // 2. Тест із плаваючою комою
+// Перевіряє точність обчислення з використанням `toBeCloseTo`, щоб уникнути помилок через неточність з floating point.
 describe('Asinh function - Approximately correct result', () => {
     test('asinh should return approximately correct value', () => {
         const result = ult.asinh(5); // Тест працює навіть із плаваючою комою
@@ -24,6 +26,7 @@ describe('Asinh function - Approximately correct result', () => {
 });
 
 // 3. Тест для негативного числа
+// Тестує поведінку функції для від’ємного аргументу, що є валідним для `asinh`.
 describe('Asinh function - Negative number', () => {
     test('asinh should return correct value for negative input', () => {
         const result = ult.asinh(-5); // Перевірка правильного результату для -5
@@ -34,6 +37,7 @@ describe('Asinh function - Negative number', () => {
 });
 
 // 4. Тест для нуля
+// Перевіряє, що `asinh(0)` повертає 0 — очікуване математичне значення.
 describe('Asinh function - Zero', () => {
     test('asinh should return 0 for input of 0', () => {
         const result = ult.asinh(0); // Перевірка, що результат дорівнює 0
@@ -44,6 +48,7 @@ describe('Asinh function - Zero', () => {
 });
 
 // 5. Тест для великого числа
+// Перевіряє, що функція коректно працює з великими числами і не втрачає точності.
 describe('Asinh function - Large number', () => {
     test('asinh should return approximately correct value for large input', () => {
         const result = ult.asinh(1000)
@@ -56,19 +61,21 @@ describe('Asinh function - Large number', () => {
 
 
 // Тести для функції acosh
-
 describe('Acosh function - General Tests', () => {
-    // Повернення коректного значення
+    // 1. Повернення коректного значення
+    // Перевіряє, що функція `acosh` повертає точне значення для аргументу більше 1.
     test('acosh should return correct value', () => {
         expect(ult.acosh(5)).toBe(Math.acosh(5));
     });
 
-    // Функція повинна повернути 0 при 1
+    // 2. Функція повинна повернути 0 при 1
+    // Математично `acosh(1)` дорівнює 0 — перевіряємо це.
     test('acosh should return 0 for input of 1', () => {
         expect(ult.acosh(1)).toBe(0);
     });
 
-    // Вихід за мужі функції, повинно повертати NaN для чисел менших за 1
+    // 3. Вихід за мужі функції, повинно повертати NaN для чисел менших за 1
+    // `acosh` математично не визначений для аргументів менше 1, функція має повертати `NaN`.
     test('acosh should return NaN for numbers less than 1', () => {
         expect(ult.acosh(0.5)).toBeNaN();
         expect(ult.acosh(-10)).toBeNaN();
@@ -76,29 +83,33 @@ describe('Acosh function - General Tests', () => {
 });
 
 // Тести для функції atanh
-
 describe('Atanh function - General Tests', () => {
-    // Тест на повернення коректного значення
+    // 1. Тест на повернення коректного значення
+    // Перевіряє точність для допустимого значення в межах (-1, 1).
     test('atanh should return correct value', () => {
         expect(ult.atanh(0.5)).toBe(Math.atanh(0.5));
     });
 
-    // Тест для нуля
+    // 2. Тест для нуля
+    // Перевіряє, що `atanh(0)` повертає 0, як і очікується.
     test('atanh should return 0 for input of 0', () => {
         expect(ult.atanh(0)).toBe(0);
     });
 
-    // Тест на безкінечність при 1
+    // 3. Тест на безкінечність при 1
+    // Математично 'atanh(1)' → безкінечність — перевіряється повернення 'Infinity'.
     test('atanh should return Infinity for input of 1', () => {
         expect(ult.atanh(1)).toBe(Infinity);
     });
 
-    // Тест на мінус безкінечність при -1
+    // 4. Тест на мінус безкінечність при -1
+    // `atanh(-1)` → -∞ — функція повинна повернути `-Infinity`.
     test('atanh should return -Infinity for input of -1', () => {
         expect(ult.atanh(-1)).toBe(-Infinity);
     });
 
-    // Тест на повернення Nan при виході за межі -1 та 1
+    // 5.Тест на повернення Nan при виході за межі -1 та 1
+    // Перевіряємо, що функція повертає `NaN` для чисел поза допустимим діапазоном.
     test('atanh should return NaN for numbers outside the range -1 to 1', () => {
         expect(ult.atanh(1.5)).toBeNaN();
         expect(ult.atanh(-1.5)).toBeNaN();
@@ -107,6 +118,7 @@ describe('Atanh function - General Tests', () => {
 
 
 // 1. Перевірка коректної обробки чисел та рядків
+// Перевіряє, що числа збільшуються на 1, а рядки переводяться у верхній регістр.
 describe('arrayProcessor - Test function', () => {
     test('should make changes', () => {
         const input = [11, 'open door'];
@@ -115,6 +127,7 @@ describe('arrayProcessor - Test function', () => {
     });
 });
 
+// 2. Перевіряє, що булеві значення, об'єкти та `null` залишаються без змін.
 describe('arrayProcessor - General Tests', () => {
     test('should leave other types unchanged', () => {
         const input = [1, 'hello', true, null, { key: 'value' }];
