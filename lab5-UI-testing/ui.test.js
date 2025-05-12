@@ -1,14 +1,22 @@
 import puppeteer from 'puppeteer';
 
+const BASE_URL = 'https://avrora.ua/';
+const SEARCH_INPUT_SELECTOR = 'input.ty-search-block__input';
+const SEARCH_BUTTON_SELECTOR = 'button.ty-search-magnifier';
+const POPULAR_BLOCK_SELECTOR = '.best-price__header';
+const PRODUCT_SELECTOR = '.ty-grid-list__item';
+const MOBILE_VIEWPORT = { width: 390, height: 884 };
+
 let browser;
 let page;
+
 describe('Basic UI Test', () => {
 
     beforeAll(async () => {
         try {
-            browser = await puppeteer.launch({ headless: false});
+            browser = await puppeteer.launch({ headless: false });
             page = await browser.newPage();
-            await page.goto('https://avrora.ua/', { waitUntil: 'networkidle2' });
+            await page.goto(BASE_URL, { waitUntil: 'networkidle2' });
         } catch (error) {
             console.error('Error during beforeAll:', error);
         }
@@ -18,75 +26,66 @@ describe('Basic UI Test', () => {
         await browser.close();
     });
 
-    // Перевірка заголовка сторінки
-    test('Перевірка наявності заголовок сторінки', async () => {
+    test('Check page title', async () => {
         const title = await page.title();
         expect(title).toBe("Мультимаркет Аврора ➤ Доступні товари для всієї сім'ї | Мультимаркет Аврора");
     });
-    
+
     test('Перевірка чи існує популярний блок "Cуперціни"', async () => {
-        await page.waitForSelector('.best-price__header');
-        const popularBlock = await page.$('.best-price__header');
+        await page.waitForSelector(POPULAR_BLOCK_SELECTOR);
+        const popularBlock = await page.$(POPULAR_BLOCK_SELECTOR);
         expect(popularBlock).not.toBeNull();
     });
     
     test('Перевірка пошуку склянок', async () => {
-        // Чекаємо на появу пошуку, вводимо запит у поле пошуку
-        await page.waitForSelector('input.ty-search-block__input');
-        await page.type('input.ty-search-block__input', 'склянка');
+        await page.type(SEARCH_INPUT_SELECTOR, 'склянка');
         await Promise.all([
             page.waitForNavigation({ waitUntil: 'networkidle2' }),
-            page.click('button.ty-search-magnifier')
+            page.click(SEARCH_BUTTON_SELECTOR)
         ]);
-    
-        // Чекаємо появи результатів пошуку
-        await page.waitForSelector('.ty-grid-list__item', { timeout: 50000});
-        
-        // Перевіряємо, що результати пошуку відображаються
-        const items = await page.$$('.ty-grid-list__item');
+
+        await page.waitForSelector(PRODUCT_SELECTOR, { timeout: 50000 });
+
+        const items = await page.$$(PRODUCT_SELECTOR);
         console.log('Товарів знайдено:', items.length);
-        expect(items.length).toBeGreaterThan(0); // Очікуємо хоча б 1 товар
+        expect(items.length).toBeGreaterThan(0);
     }, 30000);
           
     test('Мобільна версія сайту', async () => {
-        await page.setViewport({ width: 390, height: 884 }); // iPhone 12 Pro
-        await page.goto('https://avrora.ua/', { waitUntil: 'networkidle2' });
-        const menuButton = await page.$('.mob-btn'); // перевірити чи існує бургер-меню
+        await page.setViewport(MOBILE_VIEWPORT);
+        await page.goto(BASE_URL, { waitUntil: 'networkidle2' });
+        const menuButton = await page.$('.mob-btn');
         expect(menuButton).not.toBeNull();
     }, 30000);
 
     test('Відкриття модального вікна кошика', async () => {
-        // Чекаємо на появу кнопки "Кошик" та клікаємо на неї
-        await page.waitForSelector('a#opener_page_cart');
-        await page.click('a#opener_page_cart');
+        await page.waitForSelector('a.link-cart');
+        await page.click('a.link-cart');
     
-        // Чекаємо на появу модального вікна (елемент із id="page_cart")
-        await page.waitForSelector('#page_cart', { visible: true });
+        await page.waitForSelector('div#full_cart_content', { visible: true });
     
-        const isVisible = await page.$eval('#page_cart', el => {
+        const isVisible = await page.$eval('div#full_cart_content', el => {
             const style = window.getComputedStyle(el);
             return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
         });
     
-        expect(isVisible).toBe(true); // Перевіряємо, що модальне вікно відкрилось
-    }, 30000); 
+        expect(isVisible).toBe(true);
+    }, 30000);
 });
 
 describe('Opening product page', () => {
     test('Відкриття сторінки товару', async () => {
-        // Запускаємо браузер та відкриваємо сторінку
         browser = await puppeteer.launch({ headless: false, slowMo: 150 });
         page = await browser.newPage();
-        await page.goto('https://avrora.ua/', { waitUntil: 'networkidle2' });
-        // Чекаємо на появу поля пошуку, вводимо запит у поле пошуку
-        await page.type('input.ty-search-block__input', 'склянка');
-        await page.click('button.ty-search-magnifier');
-        
-        // Чекаємо на появу товарів
-        await page.waitForSelector('.ty-grid-list__image');
+        await page.goto(BASE_URL, { waitUntil: 'networkidle2' });
 
+        await page.type(SEARCH_INPUT_SELECTOR, 'склянка');
+        await page.click(SEARCH_BUTTON_SELECTOR);
         
-        // Переходимо на сторінку першого товару
+        await page.waitForSelector('.ty-grid-list__image');
+        await page.waitForSelector('div.cl-dialog-close-icon')
+        await page.click('div.cl-dialog-close-icon');
+
         const productLinks = await page.$$('.ty-grid-list__image a');
         
         if (productLinks.length > 0) {
@@ -95,15 +94,14 @@ describe('Opening product page', () => {
                 productLinks[0].click()
             ]);
             
-            // Чекаємо заголовка товару
             await page.waitForSelector('h1.ty-product-block-title');
-            // Перевіряємо, що заголовок товару відображається
+            
             const title = await page.$eval('h1.ty-product-block-title', el => el.textContent.trim());
             expect(title.length).toBeGreaterThan(0);
         } else {
             console.error('Товари не знайдені');
-            expect(false).toBe(true); // Завершуємо тест із помилкою, якщо товарів немає
+            expect(false).toBe(true);
         }
         await browser.close();
     }, 30000);
-});    
+});
