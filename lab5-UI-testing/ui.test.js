@@ -37,33 +37,37 @@ describe('Basic UI Test', () => {
         expect(popularBlock).not.toBeNull();
     });
     
+    
     test('Перевірка пошуку склянок', async () => {
         await page.type(SEARCH_INPUT_SELECTOR, 'склянка');
         await Promise.all([
             page.waitForNavigation({ waitUntil: 'networkidle2' }),
             page.click(SEARCH_BUTTON_SELECTOR)
         ]);
-
+        // Зачекайте, поки з'явиться елементи товару
         await page.waitForSelector(PRODUCT_SELECTOR, { timeout: 50000 });
-
+        // Перевірка, чи елементи товару відображаються
         const items = await page.$$(PRODUCT_SELECTOR);
         console.log('Товарів знайдено:', items.length);
         expect(items.length).toBeGreaterThan(0);
     }, 30000);
           
     test('Мобільна версія сайту', async () => {
+        // Встановлення мобільного режиму
         await page.setViewport(MOBILE_VIEWPORT);
         await page.goto(BASE_URL, { waitUntil: 'networkidle2' });
+        // Перевірка наявності елемента меню на мобільній версії
         const menuButton = await page.$('.mob-btn');
         expect(menuButton).not.toBeNull();
     }, 30000);
 
     test('Відкриття модального вікна кошика', async () => {
+        // відкриття модального вікна кошика
         await page.waitForSelector('a.link-cart');
         await page.click('a.link-cart');
-    
+        // Зачекайте, поки модальне вікно з'явиться
         await page.waitForSelector('div#full_cart_content', { visible: true });
-    
+        // Перевірка, чи модальне вікно відображається
         const isVisible = await page.$eval('div#full_cart_content', el => {
             const style = window.getComputedStyle(el);
             return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
@@ -78,16 +82,25 @@ describe('Opening product page', () => {
         browser = await puppeteer.launch({ headless: false, slowMo: 150 });
         page = await browser.newPage();
         await page.goto(BASE_URL, { waitUntil: 'networkidle2' });
-
+        // Введення пошукового запиту
         await page.type(SEARCH_INPUT_SELECTOR, 'склянка');
         await page.click(SEARCH_BUTTON_SELECTOR);
-        
+        // Чекаємо, поки з'явиться елемент товару
         await page.waitForSelector('.ty-grid-list__image');
-        await page.waitForSelector('div.cl-dialog-close-icon')
-        await page.click('div.cl-dialog-close-icon');
 
+        // Чекаємо, поки з'явиться модальне вікно і закриваємо його
+        const closeIconSelector = 'div.cl-dialog-close-icon';
+        try {
+            // Перевіряємо, чи з'явилось модальне вікно з таймаутом, якщо воно не з'явилось, ігноруємо помилку
+            await page.waitForSelector(closeIconSelector, { timeout: 5000, visible: true });
+            await page.click(closeIconSelector);
+        } catch (error) {
+            console.log('Модальне вікно не з\'явилося або не було доступне для закриття');
+        }
+        // Cтворення масиву з усіх силок на товари
         const productLinks = await page.$$('.ty-grid-list__image a');
         
+        // Перевірка, чи масив не пустий
         if (productLinks.length > 0) {
             await Promise.all([
                 page.waitForNavigation({ waitUntil: 'networkidle2' }),
@@ -95,7 +108,7 @@ describe('Opening product page', () => {
             ]);
             
             await page.waitForSelector('h1.ty-product-block-title');
-            
+            // Перевірка, чи заголовок сторінки товару не пустий
             const title = await page.$eval('h1.ty-product-block-title', el => el.textContent.trim());
             expect(title.length).toBeGreaterThan(0);
         } else {
