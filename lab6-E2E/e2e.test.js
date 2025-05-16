@@ -3,10 +3,25 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 
 puppeteer.use(StealthPlugin());
 
-describe('Tabletki.ua E2E Tests', () => {
-  let browser;
-  let page;
+let browser;
+let page;
 
+
+async function isVisible(page, selector) {
+  try {
+    return await page.$eval(selector, el => {
+      const style = window.getComputedStyle(el);
+      return style && style.display !== 'none' &&
+             style.visibility !== 'hidden' &&
+             style.opacity !== '0' &&
+             el.offsetHeight > 0 && el.offsetWidth > 0;
+    });
+  } catch {
+    return false;
+  }
+}
+
+describe('Tabletki.ua E2E Tests', () => {
   beforeAll(async () => {
     browser = await puppeteer.launch({ headless: false, slowMo: 50,   args: [
     '--no-sandbox',
@@ -23,21 +38,6 @@ describe('Tabletki.ua E2E Tests', () => {
   afterAll(async () => {
     await browser.close();
   });
-
-  async function isVisible(page, selector) {
-    try {
-      return await page.$eval(selector, el => {
-        const style = window.getComputedStyle(el);
-        return style && style.display !== 'none' &&
-               style.visibility !== 'hidden' &&
-               style.opacity !== '0' &&
-               el.offsetHeight > 0 && el.offsetWidth > 0;
-      });
-    } catch {
-      return false;
-    }
-  }
-
   test('Пошук ліків', async () => {
     // Шукаємо, який інпут пошуку доступний  
     if (await isVisible(page, 'input#homePageSearch')) {
@@ -122,6 +122,25 @@ describe('Tabletki.ua E2E Tests', () => {
     expect(basketIndicator.length).toBeGreaterThan(0);
   }, 40000);  
 
+});
+describe('Tabletki.ua пошук аптеки', () => {
+  beforeAll(async () => {
+    browser = await puppeteer.launch({ headless: false, slowMo: 100,   args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-accelerated-2d-canvas',
+    '--disable-gpu',
+    '--window-size=1920x1080',
+  ],});
+    page = await browser.newPage();
+    await page.goto('https://tabletki.ua/', { waitUntil: 'networkidle2' });
+  }, 30000);
+
+  afterAll(async () => {
+    await browser.close();
+  });  
+  
   test('Пошук аптеки подорожник в місті Богородчани', async () => {
     await page.goto('https://tabletki.ua');
     await page.waitForSelector('button.header__button-services', { timeout: 10000 });
