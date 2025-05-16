@@ -1,0 +1,27 @@
+{
+  "name": "lab7-auto",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "jest",
+    "test:unit": "jest tests/unit",
+    "test:api": "jest tests/api",
+    "test:ui": "jest tests/ui",
+    "test:e2e": "jest tests/e2e"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.9",
+    "@babel/preset-env": "^7.26.9",
+    "babel-jest": "^29.7.0",
+    "jest": "^29.7.0",
+    "puppeteer": "^24.8.2",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
+  },
+  "type": "module",
+  "jest": {
+    "^.+\\.jsx?$": "babel-jest"
+  },
+  "dependencies": {
+    "axios": "^1.8.4"
+  }
+}
