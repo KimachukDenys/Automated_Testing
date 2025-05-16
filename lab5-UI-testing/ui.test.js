@@ -14,7 +14,7 @@ describe('Basic UI Test', () => {
 
     beforeAll(async () => {
         try {
-            browser = await puppeteer.launch({ headless: false });
+            browser = await puppeteer.launch({ headless: true });
             page = await browser.newPage();
             await page.goto(BASE_URL, { waitUntil: 'networkidle2' });
         } catch (error) {
@@ -75,28 +75,14 @@ describe('Basic UI Test', () => {
     
         expect(isVisible).toBe(true);
     }, 30000);
-});
 
-describe('Opening product page', () => {
     test('Відкриття сторінки товару', async () => {
-        browser = await puppeteer.launch({ headless: false, slowMo: 150 });
-        page = await browser.newPage();
-        await page.goto(BASE_URL, { waitUntil: 'networkidle2' });
-        // Введення пошукового запиту
-        await page.type(SEARCH_INPUT_SELECTOR, 'склянка');
-        await page.click(SEARCH_BUTTON_SELECTOR);
-        // Чекаємо, поки з'явиться елемент товару
+        await page.goto(`${BASE_URL}top-tovari/`, { waitUntil: 'networkidle2' });
+
         await page.waitForSelector('.ty-grid-list__image');
 
         // Чекаємо, поки з'явиться модальне вікно і закриваємо його
-        const closeIconSelector = 'div.cl-dialog-close-icon';
-        try {
-            // Перевіряємо, чи з'явилось модальне вікно з таймаутом, якщо воно не з'явилось, ігноруємо помилку
-            await page.waitForSelector(closeIconSelector, { timeout: 5000, visible: true });
-            await page.click(closeIconSelector);
-        } catch (error) {
-            console.log('Модальне вікно не з\'явилося або не було доступне для закриття');
-        }
+
         // Cтворення масиву з усіх силок на товари
         const productLinks = await page.$$('.ty-grid-list__image a');
         
