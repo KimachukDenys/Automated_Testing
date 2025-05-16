@@ -1,7 +1,9 @@
 import { Selector } from 'testcafe';
 
 fixture`Сторінка Novaton`.page`https://novaton.ua/`;
-
+/* Для запуску тестів потрібно встановити jest, puppeteer та testcafe
+  npm install --save-dev jest puppeteer testcafe
+*/
 /* для запуску тестів використовуйте команду: npm test для запуску всіх тестів,
 або npm run testcafe, для запуску testcafe.test.js*/
 

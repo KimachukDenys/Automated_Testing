@@ -1,8 +1,10 @@
 import puppeteer from "puppeteer";
 
+/* Для запуску тестів потрібно встановити jest, puppeteer та testcafe
+  npm install --save-dev jest puppeteer testcafe
+*/
 /* для запуску тестів використовуйте команду: npm test для запуску всіх тестів,
 або npm run puppeteer, для запуску puppeteer.test.js*/
-
 describe('UI тестування сайту novaton.ua', () => {
   let browser;
   let page;
