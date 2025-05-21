@@ -1,189 +1,127 @@
-import puppeteer from 'puppeteer';
+import {
+  launchBrowser,
+  searchProduct,
+  openFirstProduct,
+  isVisible,
+  SELECTORS,
+} from '../data/helper.js';
 
-describe('Novaton.ua E2E Tests (Puppeteer)', () => {
+describe('Novaton.ua E2E Tests', () => {
   let browser;
   let page;
+  const BASE = 'https://novaton.ua/';
 
   beforeAll(async () => {
-    browser = await puppeteer.launch({
-      headless: false,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--disable-gpu',
-        '--window-size=1920x1080',
-        '--lang=uk-UA,uk',
-        '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/119.0.0.0 Safari/537.36',
-      ],
-      defaultViewport: null,
-    });
-
+    browser = await launchBrowser();
     page = await browser.newPage();
-    await page.goto('https://novaton.ua/', { waitUntil: 'networkidle2' });
+    await page.goto(BASE, { waitUntil: 'networkidle2' });
   }, 30_000);
 
-  afterAll(async () => {
-    await browser.close();
-  });
+  afterAll(() => browser.close());
 
-  async function isVisible(page, selector) {
-    try {
-      return await page.$eval(selector, el => {
-        const style = window.getComputedStyle(el);
-        return (
-          style &&
-          style.display !== 'none' &&
-          style.visibility !== 'hidden' &&
-          style.opacity !== '0' &&
-          el.offsetHeight > 0 &&
-          el.offsetWidth > 0
-        );
-      });
-    } catch {
-      return false;
-    }
-  }
+  /* ---------- tests ---------- */
 
-  test('Пошук товару "Стартер", відкриття першої сторінки товару, додавання в кошик', async () => {
-      // Очікуємо поле пошуку, вводимо "Стартер" і натискаємо Enter
-      await page.waitForSelector('input[type="search"]');
-      await page.type('input[type="search"]', 'Стартер');
-      await page.keyboard.press('Enter');
+  test(
+    'Пошук "Стартер" і додавання першого товару в кошик',
+    async () => {
+      await searchProduct(page, 'Стартер');
+      await openFirstProduct(page);
 
-      // Чекаємо, поки з'являться результати пошуку
-      await page.waitForSelector('.shop_items .item_from-shop');
-      
-      // Перевіряємо, що результати пошуку відображаються, та кілаємо перший товар
-      const firstItem = await page.$$('.shop_items .item_from-shop');
-      expect(firstItem.length).toBeGreaterThan(0);
-      await firstItem[0].click();
-      
-      // Чекаємо, поки з'явиться кнопка "Додати в кошик", та додаємо товар
-      await page.waitForSelector('.my-3');
-      await page.click('div.my-3 button.bg-yellow');
-      
-      // Натискаємо на кнопку "Перейти до кошика"
-      await page.click('a#cart-header');
-      
-      // Перевіряємо, що товар успішно додано в кошик
-      await page.waitForSelector('.cart-section', { visible: true });
-      expect(await isVisible(page, 'section.my-5')).toBe(true);
+      await page.waitForSelector(SELECTORS.addToCartBtn);
+      await page.click(SELECTORS.addToCartBtn);
+
+      await page.click(SELECTORS.cartLink);
+      await page.waitForSelector(SELECTORS.cartSection, { visible: true });
+      expect(await isVisible(page, SELECTORS.cartSection)).toBe(true);
     },
-    30_000,
+    30_000
   );
 
-  test('Зміна кількості товару в кошику', async () => {
-      await page.goto('https://novaton.ua/', { waitUntil: 'networkidle2' });
+  test(
+    'Зміна кількості товару в кошику до 2',
+    async () => {
+      await page.goto(BASE, { waitUntil: 'networkidle2' });
+      await searchProduct(page, 'Стартер');
+      await openFirstProduct(page);
 
-      // Пошук і додавання товару
-      await page.waitForSelector('input[type="search"]');
-      await page.type('input[type="search"]', 'Стартер');
+      await page.waitForSelector(SELECTORS.addToCartBtn);
+      await page.click(SELECTORS.addToCartBtn);
+
+      await page.click(SELECTORS.cartLink);
+      await page.waitForSelector(SELECTORS.qtyInput);
+
+      await page.click(SELECTORS.qtyInput, { clickCount: 3 });
+      await page.type(SELECTORS.qtyInput, '2');
       await page.keyboard.press('Enter');
 
-      await page.waitForSelector('.shop_items .item_from-shop', { visible: true });
-      const items = await page.$$('.shop_items .item_from-shop');
-      expect(items.length).toBeGreaterThan(0);
-      await items[0].click();
+      const qty = await page.$eval(SELECTORS.qtyInput, el => el.value.replace(/\D/g, ''));
+      expect(qty).toBe('2');
+    },
+    40_000
+  );
 
-      await page.waitForSelector('div.my-3 button.bg-yellow', { visible: true });
+  test(
+    'Перехід на сторінку "Контакти"',
+    async () => {
+      await page.goto(BASE, { waitUntil: 'networkidle2' });
+      await page.waitForSelector(SELECTORS.contactsLink, { visible: true });
+      await page.click(SELECTORS.contactsLink);
+
+      await page.waitForSelector(SELECTORS.contactsTitle, { visible: true });
+      const h1 = await page.$eval(SELECTORS.contactsTitle, el => el.textContent.toLowerCase());
+      expect(h1).toContain('контакт');
+    },
+    20_000
+  );
+
+  test(
+    'Відкриття категорії "Мости" з головної',
+    async () => {
+      await page.goto(BASE, { waitUntil: 'networkidle2' });
+
+      await page.waitForSelector(SELECTORS.dropdownAnim);
+      await page.click(SELECTORS.dropdownAnim);
+
+      await page.waitForSelector(SELECTORS.mostyLink, { visible: true });
+      await page.click(SELECTORS.mostyLink);
+
+      await page.waitForSelector(SELECTORS.categoryTitle, { visible: true });
+      const title = await page.$eval(SELECTORS.categoryTitle, el => el.textContent.trim());
+      expect(title).toContain('Мости');
+    },
+    30_000
+  );
+
+  /*  ---- авто‑підбір авто (XPath залишаються незмінними) ----  */
+
+  test(
+    'Додавання автомобіля → пошук запчастин по ALFA ROMEO 159',
+    async () => {
+      await page.goto(BASE, { waitUntil: 'networkidle2' });
       await page.evaluate(() => window.scrollBy(0, 300));
-      await page.click('div.my-3 button.bg-yellow');
 
-      // Перейти до кошика
-      await page.click('a#cart-header');
-      await page.waitForSelector('.cart-section', { visible: true });
+      await page.waitForSelector('button[title="ДОДАТИ АВТОМОБІЛЬ"]', { visible: true });
+      await page.click('button[title="ДОДАТИ АВТОМОБІЛЬ"]');
 
-      // Знайти інпут кількості товару
-      await page.waitForSelector('div.control input[type="text"]', { visible: true });
-      const qtyInputSelector = 'div.control input[type="text"]';
+      /* --- brand / model / engine через XPath --- */
+      const brand = await page.waitForSelector('::-p-xpath(//*[@id="brand-content"]/div/div[2]/a[10]/span)', { visible: true });
+      await page.evaluate(el => el.click(), brand);
 
-      await page.click(qtyInputSelector, { clickCount: 3 });
-      await page.type(qtyInputSelector, '2');
-      await page.keyboard.press('Enter');
+      const model = await page.waitForSelector('::-p-xpath(//*[@id="model-content"]/div/div[2]/a[7]/span)', { visible: true });
+      await page.evaluate(el => el.click(), model);
 
-      // Перевірити, що інпут має значення 2
-      const quantity = await page.$eval(qtyInputSelector, el => el.value);
-      expect(quantity).toBe('2');
+      const engine = await page.waitForSelector('::-p-xpath(//*[@id="type-content"]/div/div[2]/a[3]/span)', { visible: true });
+      await page.evaluate(el => el.click(), engine);
+
+      const detailsLink = await page.waitForSelector(
+        '::-p-xpath(//*[@id="__layout"]/div/section[1]/div[1]/div[5]/div[9]/div[2]/div[3]/a)'
+      );
+      await page.evaluate(el => el.click(), detailsLink);
+
+      await page.waitForSelector('h1.text-lato-bold');
+      const header = await page.$eval('h1.text-lato-bold', el => el.textContent.trim());
+      expect(header).toContain('Фільтри для ALFA ROMEO 159 (939) 1.9 JTDM 16V');
     },
-    40_000,
+    30_000
   );
-
-  test('Перевірка сторінки "Контакти"', async () => {
-      await page.goto('https://novaton.ua/', { waitUntil: 'networkidle2' });
-
-      // Клік на посилання "Контакти" в футері
-      await page.waitForSelector('div#top-menu a[href="/page/contacts"]', { visible: true });
-      await page.click('div#top-menu a[href="/page/contacts"]');
-
-      // Перевірка наявності заголовка або контактної інформації
-      await page.waitForSelector('h1.text-lato-bold', { visible: true });
-      const heading = await page.$eval('h1.text-lato-bold', el => el.textContent);
-      expect(heading.toLowerCase()).toContain('контакт');
-    },
-    20_000,
-  );
-
-  test('Відкриття категорії "Мости" через головну', async () => {
-    await page.goto('https://novaton.ua/', { waitUntil: 'networkidle2' });
-
-    // Знайти посилання на категорію (може знадобитися оновити селектор)
-    await page.waitForSelector('div.dropdown-menu-animation')
-    await page.click('div.dropdown-menu-animation');
-    await page.waitForSelector('div.has-link a[href="/categories/mosty"]', { visible: true });
-    await page.click('div.has-link a[href="/categories/mosty"]');
-
-    await page.waitForSelector('h1.text-lato-bold', { visible: true });
-    // Перевірка заголовку категорії
-    const categoryTitle = await page.$eval('h1.text-lato-bold', el => el.textContent?.trim());
-    expect(categoryTitle).toContain('Мости');
-  }, 30000);
-
-  test('Додавання автомобіля, пошук по автомобілю', async () => {
-    await page.goto('https://novaton.ua/', { waitUntil: 'networkidle2' });
-    await page.evaluate(() => window.scrollBy(0, 300));
-
-    // Клік по кнопці "Додати автомобіль"
-    await page.waitForSelector('button[title="ДОДАТИ АВТОМОБІЛЬ"]', { visible: true });
-    await page.click('button[title="ДОДАТИ АВТОМОБІЛЬ"]');
-
-    await page.waitForSelector('a#brand-label', { visible: true });
-
-    // Клік по бренду
-    // Знайти елемент ALFA ROMEO
-    let alfaRomeo = await page.waitForSelector(
-      '::-p-xpath(//*[@id="brand-content"]/div/div[2]/a[10]/span)',
-      { visible: true }
-    );    
-    if (!alfaRomeo) throw new Error('ALFA ROMEO not found');
-
-    // Клік по елементу
-    await page.evaluate(el => el.click(), alfaRomeo);
-
-    // Клік по моделі
-    await page.waitForSelector('div#model-content a span');
-    let afModel = await page.waitForSelector(
-      '::-p-xpath(//*[@id="model-content"]/div/div[2]/a[7]/span)',
-      { visible: true }
-    );   
-    await page.evaluate(el => el.click(), afModel);
-    
-    // Клік по типу мотора
-    await page.waitForSelector('div#type-content a span');
-    let engineType = await page.waitForSelector(
-      '::-p-xpath(//*[@id="type-content"]/div/div[2]/a[3]/span)',
-      { visible: true }
-    );   
-    await page.evaluate(el => el.click(), engineType);
-
-    // Клік сторінкці із філтрами для ALFA ROMEO 159
-    const engDetails = await page.waitForSelector('::-p-xpath(//*[@id="__layout"]/div/section[1]/div[1]/div[5]/div[9]/div[2]/div[3]/a)');
-    await page.evaluate(el => el.click(), engDetails);
-    
-    // Перевірка заголовку сторінки
-    await page.waitForSelector('h1.text-lato-bold');
-    const engTitle = await page.$eval('h1.text-lato-bold', el => el.textContent?.trim());
-    expect(engTitle).toContain('Фільтри для ALFA ROMEO 159 (939) 1.9 JTDM 16V');
-  }, 30000);
 });

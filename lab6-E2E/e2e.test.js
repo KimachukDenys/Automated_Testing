@@ -123,6 +123,7 @@ describe('Tabletki.ua E2E Tests', () => {
   }, 40000);  
 
 });
+
 describe('Tabletki.ua пошук аптеки', () => {
   beforeAll(async () => {
     browser = await puppeteer.launch({ headless: false, slowMo: 100,   args: [
